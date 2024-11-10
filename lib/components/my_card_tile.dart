@@ -5,10 +5,10 @@ class MyCardTile extends StatelessWidget {
   final VoidCallback onTap;
 
   const MyCardTile({
-    Key? key,
+    super.key,
     required this.tileTitle,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

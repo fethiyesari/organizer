@@ -1,7 +1,6 @@
 import 'package:organizer/components/my_button.dart';
 import 'package:organizer/components/my_textfield.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:organizer/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:organizer/components/square_tile.dart';
@@ -46,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.deepPurple,
+          backgroundColor: Colors.deepOrange,
           title: Center(
               child: Text(
             message,
@@ -60,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[300],
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -74,7 +73,7 @@ class _LoginPageState extends State<LoginPage> {
                 // welcome back
                 const Text(
                   "Welcome back",
-                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                  style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
 
                 const SizedBox(height: 25),
@@ -96,14 +95,14 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 10),
                 // forgot password
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 25.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Text(
                         "Forgot Password?",
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(color: Colors.black),
                       ),
                     ],
                   ),
@@ -122,29 +121,29 @@ class _LoginPageState extends State<LoginPage> {
                   height: 50,
                 ),
                 // or continue with
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 25),
                   child: Row(
                     children: [
                       Expanded(
                         child: Divider(
                           thickness: 0.5,
-                          color: Colors.grey[400],
+                          color: Colors.black,
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        padding: EdgeInsets.symmetric(horizontal: 10),
                         child: Text(
                           "or continue with",
                           style: TextStyle(
-                            color: Colors.grey[700],
+                            color: Colors.black,
                           ),
                         ),
                       ),
                       Expanded(
                         child: Divider(
                           thickness: 0.5,
-                          color: Colors.grey[400],
+                          color: Colors.black,
                         ),
                       ),
                     ],
@@ -172,7 +171,7 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     const Text(
                       "Not a member?",
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: Colors.black),
                     ),
                     const SizedBox(width: 4),
                     GestureDetector(
