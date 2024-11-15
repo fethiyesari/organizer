@@ -1,3 +1,4 @@
+import 'package:organizer/api/firebase_api.dart';
 import 'package:organizer/firebase_options.dart';
 import 'package:organizer/pages/auth_page.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -9,6 +10,8 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  await FirebaseApi().initNotifications();
+
 
   runApp(const MainApp());
 }
