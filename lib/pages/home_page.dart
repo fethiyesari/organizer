@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _HomePageState createState() => _HomePageState();
 }
 
@@ -13,52 +13,56 @@ class _HomePageState extends State<HomePage> {
   final user = FirebaseAuth.instance.currentUser!;
   final TextEditingController _todoController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
-  final List<Map<String, dynamic>> _todos = [];
   String _searchQuery = '';
 
-  void signUserOut() {
-    FirebaseAuth.instance.signOut();
-  }
+  final CollectionReference todosCollection =
+      FirebaseFirestore.instance.collection('todos');
 
-  void _addTodo() {
+  // Görev Ekleme
+  Future<void> _addTodo() async {
     if (_todoController.text.isNotEmpty) {
-      setState(() {
-        _todos.add({"task": _todoController.text, "completed": false});
-        _todoController.clear();
+      await todosCollection.add({
+        'userId': user.uid,
+        'task': _todoController.text,
+        'completed': false,
+        'timestamp': FieldValue.serverTimestamp(),
       });
+      _todoController.clear();
     }
   }
 
-  void _toggleComplete(int index) {
-    setState(() {
-      _todos[index]["completed"] = !_todos[index]["completed"];
+  // Görev Güncelleme (Tamamlandı Durumu)
+  Future<void> _toggleComplete(DocumentSnapshot todo) async {
+    await todosCollection.doc(todo.id).update({
+      'completed': !todo['completed'],
     });
   }
 
-  void _removeTodo(int index) {
-    setState(() {
-      _todos.removeAt(index);
-    });
+  // Görev Silme
+  Future<void> _removeTodo(DocumentSnapshot todo) async {
+    await todosCollection.doc(todo.id).delete();
   }
 
+  // Arama Sorgusunu Güncelleme
   void _updateSearchQuery(String query) {
     setState(() {
       _searchQuery = query.toLowerCase();
     });
   }
 
+  // Kullanıcı Çıkışı
+  void signUserOut() {
+    FirebaseAuth.instance.signOut();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final filteredTodos = _todos
-        .where((todo) => todo["task"].toLowerCase().contains(_searchQuery))
-        .toList();
-
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 100,
         backgroundColor: Colors.deepOrange,
         title: const Text(
-          "Organize",
+          "Organizer",
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 30,
@@ -74,56 +78,6 @@ class _HomePageState extends State<HomePage> {
             ),
           )
         ],
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.deepOrange,
-              ),
-              child: Text(
-                'Menu',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                ),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text('Ana Sayfa'),
-              onTap: () {
-                Navigator.pop(context); // Drawer'ı kapatır
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.info),
-              title: const Text('Hakkında'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AboutPage(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Ayarlar'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SettingsPage(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -181,47 +135,65 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 20),
             // Görev Listesi
             Expanded(
-              child: filteredTodos.isNotEmpty
-                  ? ListView.builder(
-                      itemCount: filteredTodos.length,
-                      itemBuilder: (context, index) {
-                        final todo = filteredTodos[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: ListTile(
-                            title: Text(
-                              todo["task"],
-                              style: TextStyle(
-                                fontSize: 18,
-                                decoration: todo["completed"]
-                                    ? TextDecoration.lineThrough
-                                    : TextDecoration.none,
+              child: StreamBuilder<QuerySnapshot>(
+                stream: todosCollection
+                    .where('userId', isEqualTo: user.uid)
+                    .orderBy('timestamp', descending: true)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final filteredTodos = snapshot.data!.docs.where((doc) {
+                    return doc['task']
+                        .toString()
+                        .toLowerCase()
+                        .contains(_searchQuery);
+                  }).toList();
+
+                  return filteredTodos.isNotEmpty
+                      ? ListView.builder(
+                          itemCount: filteredTodos.length,
+                          itemBuilder: (context, index) {
+                            final todo = filteredTodos[index];
+                            return Card(
+                              margin: const EdgeInsets.symmetric(vertical: 5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                            ),
-                            leading: Checkbox(
-                              value: todo["completed"],
-                              onChanged: (value) =>
-                                  _toggleComplete(_todos.indexOf(todo)),
-                              activeColor: Colors.deepOrange,
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () =>
-                                  _removeTodo(_todos.indexOf(todo)),
-                            ),
+                              child: ListTile(
+                                title: Text(
+                                  todo['task'],
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    decoration: todo['completed']
+                                        ? TextDecoration.lineThrough
+                                        : TextDecoration.none,
+                                  ),
+                                ),
+                                leading: Checkbox(
+                                  value: todo['completed'],
+                                  onChanged: (value) => _toggleComplete(todo),
+                                  activeColor: Colors.deepOrange,
+                                ),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.red),
+                                  onPressed: () => _removeTodo(todo),
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : const Center(
+                          child: Text(
+                            'Görev bulunamadı.',
+                            style: TextStyle(fontSize: 18, color: Colors.grey),
                           ),
                         );
-                      },
-                    )
-                  : const Center(
-                      child: Text(
-                        'Görev bulunamadı.',
-                        style: TextStyle(fontSize: 18, color: Colors.grey),
-                      ),
-                    ),
+                },
+              ),
             ),
           ],
         ),
@@ -230,6 +202,45 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+
+  Widget _buildDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          const DrawerHeader(
+            decoration: BoxDecoration(color: Colors.deepOrange),
+            child: Text(
+              'Menu',
+              style: TextStyle(color: Colors.white, fontSize: 24),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.home),
+            title: const Text('Ana Sayfa'),
+            onTap: () => Navigator.pop(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.info),
+            title: const Text('Hakkında'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AboutPage()),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Ayarlar'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsPage()),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 // Yeni sayfa örneği - Hakkında Sayfası
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -237,10 +248,7 @@ class AboutPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hakkında'),
-        backgroundColor: Colors.deepOrange,
-      ),
+      appBar: AppBar(title: const Text('Hakkında'), backgroundColor: Colors.deepOrange),
       body: const Center(
         child: Text(
           'Bu uygulama bir organizatör uygulamasıdır.',
@@ -258,10 +266,7 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ayarlar'),
-        backgroundColor: Colors.deepOrange,
-      ),
+      appBar: AppBar(title: const Text('Ayarlar'), backgroundColor: Colors.deepOrange),
       body: const Center(
         child: Text(
           'Ayarlar sayfası',
