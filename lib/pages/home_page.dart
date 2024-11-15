@@ -79,6 +79,56 @@ class _HomePageState extends State<HomePage> {
           )
         ],
       ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.deepOrange,
+              ),
+              child: Text(
+                'Menu',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: const Text('Ana Sayfa'),
+              onTap: () {
+                Navigator.pop(context); // Drawer'ı kapatır
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info),
+              title: const Text('Hakkında'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AboutPage(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Ayarlar'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsPage(),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -200,47 +250,10 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+  
 }
 
-  Widget _buildDrawer(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          const DrawerHeader(
-            decoration: BoxDecoration(color: Colors.deepOrange),
-            child: Text(
-              'Menu',
-              style: TextStyle(color: Colors.white, fontSize: 24),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text('Ana Sayfa'),
-            onTap: () => Navigator.pop(context),
-          ),
-          ListTile(
-            leading: const Icon(Icons.info),
-            title: const Text('Hakkında'),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AboutPage()),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Ayarlar'),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const SettingsPage()),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-// Yeni sayfa örneği - Hakkında Sayfası
+//Hakkında Sayfası
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
 
@@ -258,7 +271,7 @@ class AboutPage extends StatelessWidget {
   }
 }
 
-// Yeni sayfa örneği - Ayarlar Sayfası
+//Ayarlar Sayfası
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
