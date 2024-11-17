@@ -68,12 +68,15 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 const SizedBox(height: 50),
                 // logo
-                const Icon(Icons.lock, size: 100),
-                const SizedBox(height: 50),
+                Image.asset(
+                  "lib/images/organizer_logo.png",
+                  height: 200,
+                  width: 200,
+                ),
                 // welcome back
                 const Text(
                   "Welcome back",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                  style: TextStyle(color: Color.fromARGB(255, 0, 0, 0), fontSize: 16),
                 ),
 
                 const SizedBox(height: 25),
