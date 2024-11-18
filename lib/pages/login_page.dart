@@ -1,6 +1,7 @@
 import 'package:organizer/components/my_button.dart';
 import 'package:organizer/components/my_textfield.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:organizer/pages/forgot_password_page.dart';
 import 'package:organizer/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:organizer/components/square_tile.dart';
@@ -36,7 +37,13 @@ class _LoginPageState extends State<LoginPage> {
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context);
       //show error msg
-      showErrorMessage(e.code);
+      showDialog(
+        context: context, 
+        builder: (context){
+          return AlertDialog(
+            content: Text(e.message.toString()),
+        );
+      });
     }
   }
 
@@ -98,14 +105,27 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 10),
                 // forgot password
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 25.0),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text(
-                        "Forgot Password?",
-                        style: TextStyle(color: Colors.black),
+                      GestureDetector(
+                        onTap: (){
+                          Navigator.push(
+                            context, 
+                            MaterialPageRoute(
+                              builder: (context){
+                                return ForgotPasswordPage();
+                              },
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          "Forgot Password?",
+                          style: TextStyle(
+                              color: Colors.blue, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ],
                   ),
