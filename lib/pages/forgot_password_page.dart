@@ -1,5 +1,4 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:organizer/components/my_button.dart';
 import 'package:organizer/components/my_textfield.dart';
@@ -30,17 +29,29 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             content: Text("Password reset link sent! Check your email"),
         );
       });
-    } on FirebaseAuthException catch(e){
-      print(e);
-      showDialog(
-        context: context, 
-        builder: (context){
-          return AlertDialog(
-            content: Text(e.message.toString()),
+    } on FirebaseAuthException catch (e) {
+  if (e.code == 'user-not-found') {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return const AlertDialog(
+          content: Text("No user found for that email."),
         );
-      });
-    }
+      },
+    );
+  } else {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          content: Text("Error: ${e.message}"),
+        );
+      },
+    );
   }
+}
+}
+
   
   @override
   Widget build(BuildContext context) {
@@ -80,5 +91,4 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       ),
     );
   }
-  
 } 

@@ -26,10 +26,13 @@ class _HomePageState extends State<HomePage> {
         'task': _todoController.text,
         'completed': false,
         'timestamp': FieldValue.serverTimestamp(),
+      }).then((_) {
+        _todoController.clear(); // Görev eklendikten sonra temizle
+        setState(() {}); // UI'ı güncelle
       });
-      _todoController.clear();
     }
   }
+
 
   // Görev Güncelleme (Tamamlandı Durumu)
   Future<void> _toggleComplete(DocumentSnapshot todo) async {
@@ -148,6 +151,7 @@ class _HomePageState extends State<HomePage> {
                   borderSide: BorderSide.none,
                 ),
               ),
+              onSubmitted: (_) => _addTodo(),
             ),
             const SizedBox(height: 20),
             // Görev Ekleme
