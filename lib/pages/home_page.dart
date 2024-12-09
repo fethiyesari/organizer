@@ -13,6 +13,8 @@ class _HomePageState extends State<HomePage> {
   final user = FirebaseAuth.instance.currentUser!;
   final CollectionReference todosCollection =
       FirebaseFirestore.instance.collection('todos');
+  TextEditingController _searchController = TextEditingController();
+  String searchQuery = '';
 
   // Görev Tamamlama Durumu Değiştirme
   Future<void> _toggleComplete(DocumentSnapshot todo) async {
@@ -26,7 +28,6 @@ class _HomePageState extends State<HomePage> {
     await todosCollection.doc(todo.id).delete();
   }
 
-  // Görev Ekleme Formu (Bottom Sheet)
   void _showAddTodoForm(BuildContext context) {
     final TextEditingController _titleController = TextEditingController();
     final TextEditingController _contentController = TextEditingController();
@@ -122,15 +123,26 @@ class _HomePageState extends State<HomePage> {
                       _selectedTime!.hour,
                       _selectedTime!.minute,
                     );
-                    await todosCollection.add({
-                      'userId': user.uid,
-                      'title': _titleController.text,
-                      'content': _contentController.text,
-                      'dueDate': dueDate.toIso8601String(),
-                      'completed': false,
-                      'timestamp': FieldValue.serverTimestamp(),
+
+                    // Görev eklerken yükleme durumu ekleyin
+                    setState(() {
+                      // Yükleme durumu eklenebilir
                     });
-                    Navigator.pop(context);
+
+                    try {
+                      await todosCollection.add({
+                        'userId': user.uid,
+                        'title': _titleController.text,
+                        'content': _contentController.text,
+                        'dueDate': dueDate.toIso8601String(),
+                        'completed': false,
+                        'timestamp': FieldValue.serverTimestamp(),
+                      });
+                      // Başarıyla görev eklendikten sonra sayfayı kapat
+                      Navigator.pop(context);
+                    } catch (e) {
+                      print("Error adding todo: $e");
+                    }
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -158,48 +170,87 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: todosCollection
-            .where('userId', isEqualTo: user.uid)
-            .orderBy('timestamp', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final todos = snapshot.data!.docs;
-          if (todos.isEmpty) {
-            return const Center(child: Text("Henüz görev eklenmedi."));
-          }
-          return ListView.builder(
-            itemCount: todos.length,
-            itemBuilder: (context, index) {
-              final todo = todos[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                child: ListTile(
-                  title: Text(
-                    todo['title'],
-                    style: TextStyle(
-                      decoration: todo['completed']
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                    ),
-                  ),
-                  subtitle: Text(todo['content']),
-                  leading: Checkbox(
-                    value: todo['completed'],
-                    onChanged: (_) => _toggleComplete(todo),
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => _removeTodo(todo),
-                  ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: "Görev ara...",
+                suffixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                  borderSide: BorderSide.none,
                 ),
-              );
-            },
-          );
-        },
+                fillColor: Colors.white,
+                filled: true,
+              ),
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: todosCollection
+                  .where('userId', isEqualTo: user.uid)
+                  .orderBy('timestamp', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final todos = snapshot.data!.docs
+                    .where((todo) => todo['title']
+                        .toLowerCase()
+                        .contains(searchQuery.toLowerCase()))
+                    .toList();
+                if (todos.isEmpty) {
+                  return const Center(child: Text("Henüz görev eklenmedi."));
+                }
+                return ListView.builder(
+                  itemCount: todos.length,
+                  itemBuilder: (context, index) {
+                    final todo = todos[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                      child: ExpansionTile(
+                        title: Text(
+                          todo['title'],
+                          style: TextStyle(
+                            decoration: todo['completed']
+                                ? TextDecoration.lineThrough
+                                : TextDecoration.none,
+                          ),
+                        ),
+                        leading: Checkbox(
+                          value: todo['completed'],
+                          onChanged: (_) => _toggleComplete(todo),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _removeTodo(todo),
+                        ),
+                        children: [
+                          ListTile(
+                            title: Text("Görev Tanımı: ${todo['content']}"),
+                          ),
+                          ListTile(
+                            title: Text("Bitiş Tarihi: ${todo['dueDate']}"),
+                          ),
+
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.deepOrange,

@@ -1,4 +1,5 @@
 {
     "java.configuration.updateBuildConfiguration": "interactive",
-    "cmake.sourceDirectory": "C:/Users/ibrah/organizer/windows"
+    "cmake.sourceDirectory": "C:/Users/ibrah/organizer/windows",
+    "cmake.ignoreCMakeListsMissing": true
 }
