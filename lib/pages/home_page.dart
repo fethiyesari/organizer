@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:organizer/components/custom_drawer.dart';
+import 'package:organizer/pages/habit_tracker.dart';
+import 'package:organizer/pages/notes.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -124,11 +127,6 @@ class _HomePageState extends State<HomePage> {
                       _selectedTime!.minute,
                     );
 
-                    // Görev eklerken yükleme durumu ekleyin
-                    setState(() {
-                      // Yükleme durumu eklenebilir
-                    });
-
                     try {
                       await todosCollection.add({
                         'userId': user.uid,
@@ -138,7 +136,6 @@ class _HomePageState extends State<HomePage> {
                         'completed': false,
                         'timestamp': FieldValue.serverTimestamp(),
                       });
-                      // Başarıyla görev eklendikten sonra sayfayı kapat
                       Navigator.pop(context);
                     } catch (e) {
                       print("Error adding todo: $e");
@@ -162,7 +159,8 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.deepOrange,
-        title: const Text("To-Do List"),
+        title: const Text("To-Do"),
+        toolbarHeight: 80,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -170,10 +168,12 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
+      drawer: const CustomDrawer(),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: TextField(
               controller: _searchController,
               onChanged: (value) {
@@ -216,7 +216,8 @@ class _HomePageState extends State<HomePage> {
                   itemBuilder: (context, index) {
                     final todo = todos[index];
                     return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 5, horizontal: 10),
                       child: ExpansionTile(
                         title: Text(
                           todo['title'],
@@ -241,7 +242,6 @@ class _HomePageState extends State<HomePage> {
                           ListTile(
                             title: Text("Bitiş Tarihi: ${todo['dueDate']}"),
                           ),
-
                         ],
                       ),
                     );
