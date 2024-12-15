@@ -55,7 +55,7 @@ class CustomDrawer extends StatelessWidget {
               Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => const HabitTracker()));
+                      builder: (context) => const HabitTrackerPage()));
             },
           ),
           ListTile(
