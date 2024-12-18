@@ -50,9 +50,9 @@ class _HomePageState extends State<HomePage> {
     Future<void> _selectDate() async {
       final DateTime? picked = await showDatePicker(
         context: context,
-        initialDate: DateTime.now(),
-        firstDate: DateTime(2000),
-        lastDate: DateTime(2100),
+        initialDate: DateTime.now().toUtc(),
+        firstDate: DateTime(2000).toUtc(),
+        lastDate: DateTime(2100).toUtc(),
       );
       if (picked != null) {
         setState(() {
