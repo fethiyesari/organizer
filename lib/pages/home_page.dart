@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:organizer/components/custom_drawer.dart';
-import 'package:organizer/pages/habit_tracker.dart';
-import 'package:organizer/pages/notes.dart';
+import 'package:googleapis/calendar/v3.dart' as calendar;
+import 'package:googleapis_auth/auth_io.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
+import 'package:organizer/services/google_calendar_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,6 +22,7 @@ class _HomePageState extends State<HomePage> {
   TextEditingController _searchController = TextEditingController();
   String searchQuery = '';
 
+  final googleCalendarService = GoogleCalendarService();
   // Görev Tamamlama Durumu Değiştirme
   Future<void> _toggleComplete(DocumentSnapshot todo) async {
     await todosCollection.doc(todo.id).update({
@@ -30,6 +34,12 @@ class _HomePageState extends State<HomePage> {
   Future<void> _removeTodo(DocumentSnapshot todo) async {
     await todosCollection.doc(todo.id).delete();
   }
+
+  final _googleSignIn = GoogleSignIn(
+    scopes: [
+      calendar.CalendarApi.calendarScope,
+    ],
+  );
 
   void _showAddTodoForm(BuildContext context) {
     final TextEditingController _titleController = TextEditingController();
@@ -127,19 +137,24 @@ class _HomePageState extends State<HomePage> {
                       _selectedTime!.minute,
                     );
 
-                    try {
-                      await todosCollection.add({
-                        'userId': user.uid,
-                        'title': _titleController.text,
-                        'content': _contentController.text,
-                        'dueDate': dueDate.toIso8601String(),
-                        'completed': false,
-                        'timestamp': FieldValue.serverTimestamp(),
-                      });
-                      Navigator.pop(context);
-                    } catch (e) {
-                      print("Error adding todo: $e");
-                    }
+                    await todosCollection.add({
+                      'userId': user.uid,
+                      'title': _titleController.text,
+                      'content': _contentController.text,
+                      'dueDate': dueDate.toIso8601String(),
+                      'completed': false,
+                      'timestamp': FieldValue.serverTimestamp(),
+                    });
+
+                    // Google Calendar'a ekle
+                    await googleCalendarService.addEventToGoogleCalendar(
+                      _titleController.text,
+                      _contentController.text,
+                      DateTime.now(),
+                      dueDate,
+                    );
+
+                    Navigator.pop(context);
                   }
                 },
                 style: ElevatedButton.styleFrom(
