@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:googleapis/calendar/v3.dart' as calendar;
+import 'package:googleapis/cloudfunctions/v2.dart';
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
@@ -34,7 +36,7 @@ class GoogleCalendarService {
   }
 
   Future<void> addEventToGoogleCalendar(String title, String description,
-      DateTime startTime, DateTime endTime) async {
+      DateTime startTime, DateTime endTime, BuildContext context) async {
     try {
       final AuthClient authClient = await _getAuthenticatedClient();
 
@@ -49,9 +51,15 @@ class GoogleCalendarService {
 
       await calendarApi.events.insert(event, 'primary');
       print('Etkinlik başarıyla eklendi.');
+
+      _showSnackBar(context, '$title başarıyla Google Calendar\'a eklendi.');
     } catch (e) {
       print('Google Calendar API Hatası: $e');
       // Handle the error appropriately
     }
+      }
+    void _showSnackBar(BuildContext context, String message) {
+    final snackBar = SnackBar(content: Text(message));
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    }
   }
-}

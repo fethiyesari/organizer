@@ -223,6 +223,7 @@ class _HomePageState extends State<HomePage> {
                       _contentController.text,
                       startDateTime,
                       endDateTime,
+                      context,
                     );
 
                     Navigator.pop(context);
