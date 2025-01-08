@@ -7,6 +7,7 @@ import 'package:googleapis_auth/auth_io.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:organizer/services/google_calendar_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -87,12 +88,12 @@ class _HomePageState extends State<HomePage> {
             children: [
               TextField(
                 controller: _titleController,
-                decoration: const InputDecoration(labelText: "Görev Başlığı"),
+                decoration: const InputDecoration(labelText: "Task Name"),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: _contentController,
-                decoration: const InputDecoration(labelText: "Görev İçeriği"),
+                decoration: const InputDecoration(labelText: "Task Description"),
               ),
               const SizedBox(height: 10),
               Row(
@@ -103,7 +104,7 @@ class _HomePageState extends State<HomePage> {
                       icon: const Icon(Icons.calendar_today),
                       label: Text(
                         _selectedDate == null
-                            ? "Tarih Seç"
+                            ? "Select Date"
                             : "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}",
                       ),
                     ),
@@ -115,7 +116,7 @@ class _HomePageState extends State<HomePage> {
                       icon: const Icon(Icons.access_time),
                       label: Text(
                         _selectedTime == null
-                            ? "Saat Seç"
+                            ? "Select Time"
                             : _selectedTime!.format(context),
                       ),
                     ),
@@ -169,68 +170,77 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.deepOrange,
-        title: const Text("To-Do"),
-        toolbarHeight: 80,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => FirebaseAuth.instance.signOut(),
-          ),
-        ],
-      ),
-      drawer: const CustomDrawer(),
-      body: Column(
-        children: [
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value;
-                });
-              },
-              decoration: InputDecoration(
-                hintText: "Görev ara...",
-                suffixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide.none,
-                ),
-                fillColor: Colors.white,
-                filled: true,
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      backgroundColor: Colors.deepOrange,
+      title: const Text("To-Do", style: TextStyle(color: Colors.black)),
+      iconTheme: const IconThemeData(color: Colors.black),
+      toolbarHeight: 80,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.logout, color: Colors.black),
+          onPressed: () => FirebaseAuth.instance.signOut(),
+        ),
+      ],
+    ),
+    drawer: const CustomDrawer(),
+    body: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: TextField(
+            controller: _searchController,
+            onChanged: (value) {
+              setState(() {
+                searchQuery = value;
+              });
+            },
+            decoration: InputDecoration(
+              hintText: "Search tasks...",
+              suffixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8.0),
+                borderSide: BorderSide.none,
               ),
+              fillColor: Colors.white,
+              filled: true,
             ),
           ),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: todosCollection
-                  .where('userId', isEqualTo: user.uid)
-                  .orderBy('timestamp', descending: true)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final todos = snapshot.data!.docs
-                    .where((todo) => todo['title']
-                        .toLowerCase()
-                        .contains(searchQuery.toLowerCase()))
-                    .toList();
-                if (todos.isEmpty) {
-                  return const Center(child: Text("Henüz görev eklenmedi."));
-                }
-                return ListView.builder(
-                  itemCount: todos.length,
-                  itemBuilder: (context, index) {
-                    final todo = todos[index];
-                    return Card(
+        ),
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: todosCollection
+                .where('userId', isEqualTo: user.uid)
+                .orderBy('timestamp', descending: true)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final todos = snapshot.data!.docs
+                  .where((todo) => todo['title']
+                      .toLowerCase()
+                      .contains(searchQuery.toLowerCase()))
+                  .toList();
+              if (todos.isEmpty) {
+                return const Center(child: Text("No tasks added yet."));
+              }
+              return ListView.builder(
+                itemCount: todos.length,
+                itemBuilder: (context, index) {
+                  final todo = todos[index];
+                  return Dismissible(
+                    key: Key(todo.id),
+                    onDismissed: (_) => _removeTodo(todo),
+                    background: Container(
+                      color: Colors.red,
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20.0),
+                      child: const Icon(Icons.delete, color: Colors.white),
+                    ),
+                    child: Card(
                       margin: const EdgeInsets.symmetric(
                           vertical: 5, horizontal: 10),
                       child: ExpansionTile(
@@ -246,32 +256,31 @@ class _HomePageState extends State<HomePage> {
                           value: todo['completed'],
                           onChanged: (_) => _toggleComplete(todo),
                         ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _removeTodo(todo),
-                        ),
                         children: [
                           ListTile(
-                            title: Text("Görev Tanımı: ${todo['content']}"),
+                            title: Text("Task Description: ${todo['content']}"),
                           ),
                           ListTile(
-                            title: Text("Bitiş Tarihi: ${todo['dueDate']}"),
+                            title: Text("Due Date: ${todo['dueDate']}"),
                           ),
                         ],
                       ),
-                    );
-                  },
-                );
-              },
-            ),
+                    ),
+                  );
+                },
+              );
+            },
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.deepOrange,
-        onPressed: () => _showAddTodoForm(context),
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+    floatingActionButton: FloatingActionButton(
+      backgroundColor: Colors.deepOrange,
+      onPressed: () => _showAddTodoForm(context),
+      child: const Icon(Icons.add, color: Colors.white,),
+    ),
+  );
+}
+
+
 }
