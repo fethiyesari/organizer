@@ -47,7 +47,16 @@ class GoogleCalendarService {
         ..start =
             calendar.EventDateTime(dateTime: startTime.toUtc(), timeZone: 'UTC')
         ..end =
-            calendar.EventDateTime(dateTime: endTime.toUtc(), timeZone: 'UTC');
+            calendar.EventDateTime(dateTime: endTime.toUtc(), timeZone: 'UTC')
+        ..reminders = calendar.EventReminders(
+      useDefault: false,
+      overrides: [
+        calendar.EventReminder(
+          method: 'popup', // veya 'email' seçeneği
+          minutes: 30, // 30 dakika önce hatırlatma
+        ),
+      ],
+    );
 
       await calendarApi.events.insert(event, 'primary');
       print('Etkinlik başarıyla eklendi.');
